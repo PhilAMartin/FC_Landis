@@ -2,10 +2,9 @@
 #Elena's Landis-II 'ecoregions' using data from Paul's gradient plots
 
 #author: Phil martin
-#Date 2015/11/04
+#Date 2016/03/04
 
 #open packages
-library(raster)
 library(ggplot2)
 library(lme4)
 library(reshape)
@@ -209,9 +208,6 @@ Trees<-ddply(BM_ER,.(Scenario,Time,Replicate),summarise,Timber_M=weighted.mean(V
 ###################################################################################################################
 #merge all different ecosystem services and biodiversity measures together into two dataframes#####################
 ###################################################################################################################
-
-Eco_summary_means<-merge(merge(Eco_summary2,CN_ER_sum,by=c("EcoregionName","Scenario","Time")),Trees_sum,by=c("EcoregionName","Scenario","Time"))
-write.csv(x=Eco_summary_means,"Data/R_output/Ecoregion_means_replicates.csv")
 
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
