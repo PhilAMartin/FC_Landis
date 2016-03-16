@@ -5,7 +5,6 @@
 #Date 2015/11/04
 
 #open packages
-library(raster)
 library(ggplot2)
 library(lme4)
 library(reshape)
