@@ -101,8 +101,6 @@ for (i in 1:nrow(Un_Scen)){
 
 #set resistance as equal to 1 if variable increases
 Res_summary$Resistance<-ifelse(Res_summary$Resistance>1,1,Res_summary$Resistance) 
-#set Scenario 1 resistance as equal to 1
-Res_summary$Resistance<-ifelse(Res_summary$Scenario=="Scenario 1",1,Res_summary$Resistance)
 #set resistance as equal to 0 if it is less than 0
 Res_summary$Resistance<-ifelse(Res_summary$Resistance<0,0,Res_summary$Resistance)
 
@@ -142,19 +140,14 @@ unique(Res_summary2$ESLab)
 #output this as a .csv file for Elena
 write.csv(Res_summary,"Data/R_output/Resistence_replicates.csv",row.names=F)
 
-head(Res_summary2)
+head(Res_summary4)
 
 #plot results
 theme_set(theme_bw(base_size=12))
-P1<-ggplot(Res_summary3,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=5)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
-P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))+geom_line(data=Res_summary3,aes(group=Scen_lab2))
+P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=5)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
+P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+xlab("Degree of disturbance")+ylab("Resistance")+scale_x_continuous(c(0,20,40,60,80,100))
 P4<-P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
-
-BD1<-ggplot(Res_summary,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=5)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
-BD2<-BD1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))+geom_line(data=Res_summary4,aes(group=Scen_lab2))
-BD3<-BD2+xlab("Degree of disturbance")+ylab("Resistance")+scale_x_continuous(c(0,20,40,60,80,100))
-BD4<-BD3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
 
 
 grid.arrange(P4,BD4)
@@ -197,15 +190,13 @@ for (i in 1:nrow(Un_Scen)){#run this part of loop for all scenarios
 }
 }
 head(Recovery_summary)
-subset(Recovery_summary,Scenario=="Scenario 3"&Variable=="AGB_M")
 
 
-#set resistance as==1 for Scenario 1 and if Reistance>=1
-Recovery_summary$Resistance<-ifelse(Recovery_summary$Scenario=="Scenario 1",1,Recovery_summary$Resistance)#set Scenario 1 resistance as equal to 1
+#set resistance as==1if Resistance>=1
 Recovery_summary$Resistance<-ifelse(Recovery_summary$Resistance>=1,1,Recovery_summary$Resistance) #set resistance as equal to 1 if variable increases
 
 #subset data so that data before time step==5, data from Scenario 1 and where resistance>1 are removed
-Recovery_sub<-subset(Recovery_summary,Time>5&Scenario!="Scenario 1"|Variable!="Min_rate_M")
+Recovery_sub<-subset(Recovery_summary,Time>5)
 
 
 
@@ -295,7 +286,7 @@ Pers_summ$variable<-Pers_summ$Variable
 Pers_summ$ESLab <- ES_labeller('variable',Pers_summ$variable)
 Pers_summ$Scen_lab <- as.numeric(Scenario_labeller('Scenario',Pers_summ$Scenario))
 Pers_summ$Scen_lab2 <- Scenario_labeller2('Scenario',Pers_summ$Scenario)
-Pers_summ<-subset(Pers_summ,Scen_lab2!="Press"&Scenario!="Scenario 1")
+
 
 
 Pers_summ<-subset(Pers_summ,ESLab=="Carbon stock"|ESLab=="Nitrogen stock"|ESLab=="Recreation value"|ESLab=="Timber volume"|ESLab=="Fungi species richness"|ESLab=="Ground flora \nspecies richness"|ESLab=="Lichen species \nrichness"|ESLab=="Tree species richness")
