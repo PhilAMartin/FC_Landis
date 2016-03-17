@@ -2,10 +2,9 @@
 #Elena's Landis-II 'ecoregions' using data from Paul's gradient plots
 
 #author: Phil martin
-#Date 2015/11/04
+#Date 2016/03/16
 
 #open packages
-library(raster)
 library(ggplot2)
 library(lme4)
 library(reshape)
@@ -120,7 +119,6 @@ Eco_summary$AGB<-Eco_summary$AGB/100
 
 Eco_summary2<-ddply(Eco_summary,.(Time,EcoregionName,EcoregionIndex,Scenario,Replicate),numcolwise(mean,na.rm=T))
 
-
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
 
@@ -183,9 +181,9 @@ BM_ER<-NULL
 for (i in 1:length(Eco_region_BM)){
   #read in .csv
   File<-read.csv(Eco_region_BM[i])
-  File_sub1<-File[-c(1:4,ncol(File))]
   #remove columns that we are not interested in
-  File_sub2<-File[-c(5:12,14:25,27:ncol(File))]
+  File_sub1<-File[,-c(1:4,ncol(File))]
+  File_sub2<-File[,c("Time","Ecoregion","EcoregionIndex","NumSites","SppBiomass_fagusylv","SppBiomass_querrobu")]
   #remove rows containing NAs
   File_sub1<-File_sub1[complete.cases(File_sub1),]
   File_sub1[File_sub1 > 0] <- 1 
@@ -210,11 +208,13 @@ Trees<-ddply(BM_ER,.(Scenario,Time,Replicate),summarise,Timber_M=weighted.mean(V
 #merge all different ecosystem services and biodiversity measures together into two dataframes#####################
 ###################################################################################################################
 
-Eco_summary_means<-merge(merge(Eco_summary2,CN_ER_sum,by=c("EcoregionName","Scenario","Time")),Trees_sum,by=c("EcoregionName","Scenario","Time"))
-write.csv(x=Eco_summary_means,"Data/R_output/Ecoregion_means_replicates.csv")
-
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
 
 Eco_summary_weighted<-merge(merge(Eco_summary3,WM_CN,by=c("Scenario","Time","Replicate")),Trees,by=c("Scenario","Time","Replicate"))
 write.csv(x=Eco_summary_weighted,"Data/R_output/Ecoregion_summary_replicates.csv")
+
+Eco_summary_melt<-melt(Eco_summary_weighted,id.vars = c("Scenario","Time","Replicate"))
+
+ggplot(Eco_summary_melt,aes(x=Time,y=value,colour=as.factor(Scenario)))+geom_line()+facet_wrap(~variable,scales = "free_y")
+
