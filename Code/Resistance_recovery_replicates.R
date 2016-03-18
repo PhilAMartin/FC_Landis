@@ -111,11 +111,11 @@ Res_summary$Scen_lab <- Scenario_labeller('Scenario',Res_summary$Scenario)
 Res_summary2<-ddply(Res_summary,.(Scenario,variable,Scen_lab,ESLab),summarise,m_Res=mean(Resistance),max_R=max(Resistance),min_R=min(Resistance))
 Res_summary2<-subset(Res_summary2,ESLab!="Replicate")
 #reorder factors for plotting
-Res_summary2$ESLab <- factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
-                                                   "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
-                                                   "Timber volume","Aesthetic value", "Recreation value",
-                                                         "Fungi species richness","Ground flora \nspecies richness",
-                                                          "Lichen species \nrichness","Tree species richness"))
+Res_summary2$ESLab <-factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
+                                                "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
+                                                "Timber volume","Aesthetic value", "Recreation value",
+                                                "Fungi species richness","Ground flora \nspecies richness",
+                                                "Lichen species \nrichness","Tree species richness"))
 #plot results with facets
 theme_set(theme_bw(base_size=12))
 P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,scales = "free_x")
@@ -196,9 +196,12 @@ R_summ$variable<-R_summ$Variable#tidy data
 R_summ$ESLab <- ES_labeller('variable',R_summ$variable)#relabel variables for ease of plotting
 R_summ$Scen_lab <- Scenario_labeller('Scenario',R_summ$Scenario)
 
-R_summ$ESLab <- factor(R_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recreation value", "Timber volume",
-                                                   "Fungi species richness","Ground flora \nspecies richness",
-                                                   "Lichen species \nrichness","Tree species richness"))
+R_summ$ESLab <-factor(R_summ$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
+                                            "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
+                                            "Timber volume","Aesthetic value", "Recreation value",
+                                            "Fungi species richness","Ground flora \nspecies richness",
+                                            "Lichen species \nrichness","Tree species richness"))
+#plot results with facets
 
 
 #plot of time taken for recovery
@@ -240,6 +243,11 @@ Pers_summ$Scen_lab2 <- Scenario_labeller2('Scenario',Pers_summ$Scenario)
 
 
 Pers_summ2<-ddply(Pers_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_var=mean(Resistance2),sd_var=sd(Resistance2))
+Pers_summ2$ESLab<-factor(Pers_summ2$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
+                         "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
+                         "Timber volume","Aesthetic value", "Recreation value",
+                         "Fungi species richness","Ground flora \nspecies richness",
+                         "Lichen species \nrichness","Tree species richness"))
 
 #produce figure
 P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var,colour=Scen_lab,shape=Scen_lab))+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,ncol=4,scale="free")
