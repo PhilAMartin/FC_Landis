@@ -122,7 +122,7 @@ P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+xlab("Management type")+ylab("Resistance")
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P4+scale_y_continuous(limits=c(0.9,1.05))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+P4+scale_y_continuous(limits=c(0.7,1.05))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
 ggsave("Figures/Resistance.pdf",width = 10,height = 8,units = "in",dpi = 400)
 ggsave("Figures/Resistance.png",width = 10,height = 8,units = "in",dpi = 800)
 
@@ -201,6 +201,8 @@ R_summ$ESLab <-factor(R_summ$ESLab, c("Aboveground biomass","Carbon stock", "Nit
                                             "Timber volume","Aesthetic value", "Recreation value",
                                             "Fungi species richness","Ground flora \nspecies richness",
                                             "Lichen species \nrichness","Tree species richness"))
+
+R_summ2<-ddply(R_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_time=mean(Time,na.rm = T),sd_time=sd(Time,na.rm = T))
 #plot results with facets
 
 
