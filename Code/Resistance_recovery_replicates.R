@@ -4,6 +4,8 @@
 #load packages
 library(ggplot2)
 library(tidyr)
+library(plyr)
+library(reshape)
 library(dplyr)
 library(vegan)
 library(grid)
@@ -11,10 +13,17 @@ library(gridExtra)
 
 #organise data
 Eco_summary<-read.csv("Data/R_output/Ecoregion_summary_replicates.csv")
+#order by "time" column
 Eco_summary<-Eco_summary[order(Eco_summary[,3]),]
-head(Eco_summary)
+
+#check problems with carbon stocks to send to Elena
+Summary_melt<-melt(Eco_summary,id.vars=c("Scenario","Time","Replicate","X"))
+ggplot(Summary_melt,aes(x=Time,y=value,colour=Scenario,group=interaction(Replicate,Scenario)))+geom_line()+facet_wrap(~variable,scales = "free")
+ggsave("Figures/For_Elena.pdf",width = 8,height = 6,dpi = 400,units = "in")
+
 
 #functions to make plotting of figures easier
+#first this gives more intelligible names to variables
 
 ES_labeller <- function(var, value){
   value <- as.character(value)
@@ -36,40 +45,12 @@ ES_labeller <- function(var, value){
   return(value)
 }
 
-Scenario_labeller <- function(var, value){ # lifted bodily from the R Cookbook
+#this gives scenarios a more useful name
+Scenario_labeller <- function(var, value){ # labels scenarios with more meaningful names
   value <- as.character(value)
   if (var=="Scenario") {
-    value[value=="Scenario 1"]   <- 0
-    value[value=="Scenario 2"]   <- 20
-    value[value=="Scenario 3"]   <- 40
-    value[value=="Scenario 4"]   <- 60
-    value[value=="Scenario 5"]   <- 80
-    value[value=="Scenario 6"]   <- 100
-    value[value=="Scenario 7"]   <- 0
-    value[value=="Scenario 8"]   <- 20
-    value[value=="Scenario 9"]   <- 40
-    value[value=="Scenario 10"]   <- 60
-    value[value=="Scenario 11"]   <- 80
-    value[value=="Scenario 12"]   <- 100
-  }
-  return(value)
-}
-
-Scenario_labeller2 <- function(var, value){ # lifted bodily from the R Cookbook
-  value <- as.character(value)
-  if (var=="Scenario") {
-    value[value=="Scenario 1"]   <- "Pulse"
-    value[value=="Scenario 2"]   <- "Pulse"
-    value[value=="Scenario 3"]   <- "Pulse"
-    value[value=="Scenario 4"]   <- "Pulse"
-    value[value=="Scenario 5"]   <- "Pulse"
-    value[value=="Scenario 6"]   <- "Pulse"
-    value[value=="Scenario 7"]   <- "Pulse + Press"
-    value[value=="Scenario 8"]   <- "Pulse + Press"
-    value[value=="Scenario 9"]   <- "Pulse + Press"
-    value[value=="Scenario 10"]   <- "Pulse + Press"
-    value[value=="Scenario 11"]   <- "Pulse + Press"
-    value[value=="Scenario 12"]   <- "Pulse + Press"
+    value[value=="Scenario 1"]   <- "Business \nas usual"
+    value[value=="Scenario 2"]   <- "Forest \nmanagement"
   }
   return(value)
 }
@@ -89,7 +70,8 @@ Un_Scen<-unique(Sc)
 #loop to calculate resistance based on Shade et al. 2012
 Res_summary<-NULL
 for (i in 1:nrow(Un_Scen)){
-  Scen_sub<-subset(Eco_summary,Scenario==Un_Scen[i,1]&Replicate==Un_Scen[i,2])#subset data to only inlude data from one scenario
+  #subset data to only inlude data from one scenario
+  Scen_sub<-subset(Eco_summary,Scenario==Un_Scen[i,1]&Replicate==Un_Scen[i,2])
   for (y in seq(4,ncol(Eco_summary))){
     #produce data frame with details of scenario, the variable assessed and its resistance
     Resistance<-data.frame(Scenario=unique(Scen_sub$Scenario),Replicate=unique(Scen_sub$Replicate),variable=colnames(Scen_sub[y]),
@@ -104,55 +86,37 @@ Res_summary$Resistance<-ifelse(Res_summary$Resistance>1,1,Res_summary$Resistance
 #set resistance as equal to 0 if it is less than 0
 Res_summary$Resistance<-ifelse(Res_summary$Resistance<0,0,Res_summary$Resistance)
 
-#prepare descriptive labels for different figures
+#prepare descriptive labels for figures
 Res_summary$ESLab <- ES_labeller('variable',Res_summary$variable)
-Res_summary$Scen_lab <- as.numeric(Scenario_labeller('Scenario',Res_summary$Scenario))
-Res_summary$Scen_lab2 <- Scenario_labeller2('Scenario',Res_summary$Scenario)
+Res_summary$Scen_lab <- Scenario_labeller('Scenario',Res_summary$Scenario)
 
 #recalculate statistics for figure
-Res_summary2<-ddply(Res_summary,.(Scenario,ESLab),transform,m_Res=mean(Resistance),sd_Res=sd(Resistance))
-
-
+Res_summary2<-ddply(Res_summary,.(Scenario,ESLab),transform,m_Res=mean(Resistance),max_R=max(Resistance),min_R=min(Resistance))
 Res_summary2<-subset(Res_summary2,ESLab!="Replicate")
-
+#reorder factors for plotting
 Res_summary2$ESLab <- factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
                                                    "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
                                                    "Timber volume","Aesthetic value", "Recreation value",
                                                          "Fungi species richness","Ground flora \nspecies richness",
                                                           "Lichen species \nrichness","Tree species richness"))
-Res_summary2$ES_lab2<-ifelse(Res_summary2$ESLab=="Aboveground biomass"|
-                               Res_summary2$ESLab=="Carbon stock"|
-                               Res_summary2$ESLab=="Nitrogen stock"|
-                               Res_summary2$ESLab=="Soil respiration rate"|
-                               Res_summary2$ESLab=="Nitrogen mineralistation \nrate"|
-                               Res_summary2$ESLab=="Commercially valuable \nfungi richness"|
-                               Res_summary2$ESLab=="Timber volume"|
-                               Res_summary2$ESLab=="Aesthetic value"|
-                               Res_summary2$ESLab=="Recreation value",
-                             "ES1",
-                             NA)
-Res_summary2$ES_lab2<-ifelse(is.na(Res_summary2$ES_lab2),"BD1",Res_summary2$ES_lab2)
-
-Res_summary3<-subset(Res_summary2,ES_lab2=="ES1")
-Res_summary4<-subset(Res_summary2,ES_lab2=="BD1")
-
-unique(Res_summary2$ESLab)
-#output this as a .csv file for Elena
-write.csv(Res_summary,"Data/R_output/Resistence_replicates.csv",row.names=F)
-
-head(Res_summary4)
-
 #plot results
+#first with no facets
 theme_set(theme_bw(base_size=12))
-P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=5)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
-P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))
-P3<-P2+xlab("Degree of disturbance")+ylab("Resistance")+scale_x_continuous(c(0,20,40,60,80,100))
-P4<-P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
+P1<-ggplot(Res_summary2,aes(x=ESLab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5,position=position_dodge(width = 0.5))
+P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
+P3<-P2+xlab("Ecosystem service/biodiversity metric")+ylab("Resistance")
+P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
+P5<-P4+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Resistance_no_facet.pdf",width = 10,height = 6,units = "in",dpi = 400)
 
-
-grid.arrange(P4,BD4)
-
-ggsave("Figures/Resistance_replicates.pdf",width = 10,height = 4,units = "in",dpi = 400)
+#now with facets
+theme_set(theme_bw(base_size=12))
+P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5,position=position_dodge(width = 0.5))+facet_wrap(~ESLab,scales = "free_x")
+P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
+P3<-P2+xlab("Management type")+ylab("Resistance")
+P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
+P4+scale_y_continuous(limits=c(0.9,1.05))
+ggsave("Figures/Resistance_facet.pdf",width = 10,height = 8,units = "in",dpi = 400)
 
 #############################################################
 #2 - Recovery################################################
@@ -201,7 +165,8 @@ Recovery_sub<-subset(Recovery_summary,Time>5)
 
 
 #not sure what is going on with carbon here - this will need fixing
-ggplot(Recovery_sub,aes(x=Time,y=Resistance2,colour=Scenario,group=Replicate))+geom_line()+facet_wrap(~Variable,scales="free_y")
+
+ggplot(Recovery_sub,aes(x=Time,y=Resistance2,colour=Scenario,group=interaction(Replicate,Scenario)))+geom_line()+facet_wrap(~Variable,scales="free_y")
 
 #now work out the first time point at which Resistance2>=1, thereby working out the time
 #taken for each ecosystem service/biodiversity variable to recover
