@@ -256,5 +256,5 @@ P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+ylab("Persistance")+ theme(strip.text.x = element_text(size = 8))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P4+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+P4+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))+xlab("Management type")
 ggsave("Figures/Persistence_facets.pdf",width = 10,height = 5,units = "in",dpi = 400)
