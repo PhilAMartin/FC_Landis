@@ -204,7 +204,7 @@ R_summ$ESLab <- factor(R_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recrea
 #plot of time taken for recovery
 P1<-ggplot(R_summ2,aes(x=Scen_lab,y=m_time,ymax=m_time+sd_time,ymin=m_time-sd_time,colour=Scen_lab,shape=Scen_lab))+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,ncol=4,scale="free")
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
-P3<-P2+ylab("Time taken for recovery (Years)")+ theme(strip.text.x = element_text(size = 8))+xlab("Mangement type")
+P3<-P2+ylab("Time taken for recovery (Years)")+ theme(strip.text.x = element_text(size = 8))+xlab("Management type")
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
 P4+scale_y_continuous(limits=c(0,105))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
 ggsave("Figures/Recovery_time.pdf",width = 10,height = 8,units = "in",dpi = 400)
