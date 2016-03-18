@@ -118,7 +118,7 @@ Res_summary2$ESLab <-factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon 
                                                 "Lichen species \nrichness","Tree species richness"))
 #plot results with facets
 theme_set(theme_bw(base_size=12))
-P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,scales = "free_x")
+P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,scales = "free")
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+xlab("Management type")+ylab("Resistance")
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
