@@ -162,10 +162,7 @@ Recovery_summary$Resistance<-ifelse(Recovery_summary$Resistance>=1,1,Recovery_su
 #subset data so that data before time step==5, data from Scenario 1 and where resistance>1 are removed
 Recovery_sub<-subset(Recovery_summary,Time>5)
 
-
-
 #not sure what is going on with carbon here - this will need fixing
-
 ggplot(Recovery_sub,aes(x=Time,y=Resistance2,colour=Scenario,group=interaction(Replicate,Scenario)))+geom_line()+facet_wrap(~Variable,scales="free_y")
 
 #now work out the first time point at which Resistance2>=1, thereby working out the time
@@ -191,9 +188,7 @@ for (i in 1:nrow(Un_Sce_ES)){
 
 R_summ$variable<-R_summ$Variable#tidy data
 R_summ$ESLab <- ES_labeller('variable',R_summ$variable)#relabel variables for ease of plotting
-R_summ$Scen_lab <- as.numeric(Scenario_labeller('Scenario',R_summ$Scenario))
-R_summ$Scen_lab2 <- Scenario_labeller2('Scenario',R_summ$Scenario)
-R_summ<-subset(R_summ,Scen_lab2!="Press")
+R_summ$Scen_lab <- Scenario_labeller('Scenario',R_summ$Scenario)
 
 R_summ<-subset(R_summ,ESLab=="Carbon stock"|ESLab=="Nitrogen stock"|ESLab=="Recreation value"|ESLab=="Timber volume"|ESLab=="Fungi species richness"|ESLab=="Ground flora \nspecies richness"|ESLab=="Lichen species \nrichness"|ESLab=="Tree species richness")
 R_summ$ESLab <- factor(R_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recreation value", "Timber volume",
@@ -201,27 +196,23 @@ R_summ$ESLab <- factor(R_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recrea
                                                    "Lichen species \nrichness","Tree species richness"))
 
 
-unique(R_summ$Variable)
-R_summ2<-ddply(R_summ,.(Scenario,Variable),transform,m_time=mean(Time),sd_time=sd(Time))
+R_summ2<-ddply(R_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_time=mean(Time,na.rm = T),sd_time=sd(Time,na.rm = T))
 R_summ2$m_time<-ifelse(R_summ2$Variable=="GF_M"|R_summ2$Variable=="Tree_richness_M",NA,R_summ2$m_time)
 
 
-#output this as a .csv file for Elena
-write.csv(R_summ,"Data/R_output/Recovery_replicates.csv",row.names=F)
-
-
+#plot recovery
 P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=4)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
 P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))+geom_line(data=Res_summary2,aes(group=Scen_lab2))
 P3<-P2+xlab("Degree of disturbance")+ylab("Resistance")
 P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
 
 #plot of time taken for recovery
-P1<-ggplot(R_summ2,aes(x=Scen_lab,y=m_time,ymax=m_time+sd_time,ymin=m_time-sd_time,colour=Scen_lab2,shape=Scen_lab2))+geom_pointrange(alpha=0.5)+geom_line(aes(group=Scen_lab2))+facet_wrap(~ESLab,ncol=4)
-P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))
-P3<-P2+ylab("Time taken for recovery (Years)")+ theme(strip.text.x = element_text(size = 8))+xlab("Degree of disturbance")
-P4<-P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
-P4
-ggsave("Figures/Recovery_time_replicates.pdf",width = 10,height = 5,units = "in",dpi = 400)
+P1<-ggplot(R_summ2,aes(x=Scen_lab,y=m_time,ymax=m_time+sd_time,ymin=m_time-sd_time,colour=Scen_lab,shape=Scen_lab))+geom_pointrange(alpha=0.5)+facet_wrap(~ESLab,ncol=4)
+P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
+P3<-P2+ylab("Time taken for recovery (Years)")+ theme(strip.text.x = element_text(size = 8))+xlab("Mangement type")
+P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
+P4+scale_y_continuous(limits=c(0,70))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Recovery_time_facet.pdf",width = 10,height = 5,units = "in",dpi = 400)
 
 
 ##################################################################
@@ -249,7 +240,7 @@ Pers_summ$Resistance2<-ifelse(Pers_summ$Resistance2>1,1,Pers_summ$Resistance2)
 Pers_summ$variable<-Pers_summ$Variable
 #relabel bits for plotting of figures
 Pers_summ$ESLab <- ES_labeller('variable',Pers_summ$variable)
-Pers_summ$Scen_lab <- as.numeric(Scenario_labeller('Scenario',Pers_summ$Scenario))
+Pers_summ$Scen_lab <- Scenario_labeller('Scenario',Pers_summ$Scenario)
 Pers_summ$Scen_lab2 <- Scenario_labeller2('Scenario',Pers_summ$Scenario)
 
 
@@ -258,15 +249,12 @@ Pers_summ<-subset(Pers_summ,ESLab=="Carbon stock"|ESLab=="Nitrogen stock"|ESLab=
 Pers_summ$ESLab <- factor(Pers_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recreation value", "Timber volume",
                                        "Fungi species richness","Ground flora \nspecies richness",
                                        "Lichen species \nrichness","Tree species richness"))
-head(Pers_summ)
-Pers_summ2<-ddply(Pers_summ,.(Scenario,Variable),transform,m_var=mean(Resistance2),sd_var=sd(Resistance2))
+Pers_summ2<-ddply(Pers_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_var=mean(Resistance2),sd_var=sd(Resistance2))
 
-#output this as a .csv for elena
-write.csv(Pers_summ,"Data/R_output/Persistence_replicates.csv",row.names=F)
-
-P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var,colour=Scen_lab2,shape=Scen_lab2))+geom_pointrange(alpha=0.5)+facet_wrap(~ESLab,ncol=4)+geom_line(aes(group=Scen_lab2))
-P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))
+#produce figure
+P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var,colour=Scen_lab,shape=Scen_lab))+geom_pointrange(alpha=0.5)+facet_wrap(~ESLab,ncol=4)
+P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+ylab("Persistance")+ theme(strip.text.x = element_text(size = 8))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)
-P4<-P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
-P4+xlab("Degree of disturbance")
-ggsave("Figures/Persistence_replicates.pdf",width = 8,height = 6,units = "in",dpi = 400)
+P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
+P4+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Persistence_facets.pdf",width = 10,height = 5,units = "in",dpi = 400)
