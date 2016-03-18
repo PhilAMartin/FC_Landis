@@ -150,10 +150,14 @@ for (i in 1:length(C_N)){
   File<-read.csv(C_N[i])
   #remove blank column
   File_sub<-File[-c(5:12,14,29:ncol(File))]
+  head(File_sub)
+  File_sub_melt<-melt(File_sub,id.vars=c("Time","EcoregionName","EcoregionIndex","NumSites"))
+  Summarise_melt<-ddply(File_sub_melt,.(Time,variable),summarise,med_val=median(value))
   #remove rows containing NAs
   File_sub2<-File_sub[complete.cases(File_sub),]
+  head(File_sub2)
   #calculate total carbon
-  Total_C<-rowSums (File_sub2[6:ncol(File_sub2)], na.rm = FALSE, dims = 1)/100
+  Total_C<-rowSums (File_sub2[6:(ncol(File_sub2)-4)], na.rm = FALSE, dims = 1)/100
   File_sub3<-cbind(File_sub2[,1:5],Total_C)
   #insert a column with the scenario number
   File_sub3$Scenario<-paste("Scenario ",gsub(".*-log|_r.*","", C_N[i]),sep="")
@@ -210,11 +214,5 @@ Trees<-ddply(BM_ER,.(Scenario,Time,Replicate),summarise,Timber_M=weighted.mean(V
 
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
-
 Eco_summary_weighted<-merge(merge(Eco_summary3,WM_CN,by=c("Scenario","Time","Replicate")),Trees,by=c("Scenario","Time","Replicate"))
 write.csv(x=Eco_summary_weighted,"Data/R_output/Ecoregion_summary_replicates.csv")
-
-Eco_summary_melt<-melt(Eco_summary_weighted,id.vars = c("Scenario","Time","Replicate"))
-
-ggplot(Eco_summary_melt,aes(x=Time,y=value,colour=as.factor(Scenario)))+geom_line()+facet_wrap(~variable,scales = "free_y")
-

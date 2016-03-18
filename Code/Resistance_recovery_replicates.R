@@ -1,6 +1,8 @@
 #script to calculate the resistance and recovery for different ecosystem services
 #at the landscape scale
 
+rm(list=ls())
+
 #load packages
 library(ggplot2)
 library(tidyr)
@@ -15,12 +17,6 @@ library(gridExtra)
 Eco_summary<-read.csv("Data/R_output/Ecoregion_summary_replicates.csv")
 #order by "time" column
 Eco_summary<-Eco_summary[order(Eco_summary[,3]),]
-
-#check problems with carbon stocks to send to Elena
-Summary_melt<-melt(Eco_summary,id.vars=c("Scenario","Time","Replicate","X"))
-ggplot(Summary_melt,aes(x=Time,y=value,colour=Scenario,group=interaction(Replicate,Scenario)))+geom_line()+facet_wrap(~variable,scales = "free")
-ggsave("Figures/For_Elena.pdf",width = 8,height = 6,dpi = 400,units = "in")
-
 
 #functions to make plotting of figures easier
 #first this gives more intelligible names to variables
@@ -54,6 +50,27 @@ Scenario_labeller <- function(var, value){ # labels scenarios with more meaningf
   }
   return(value)
 }
+
+
+#first produce a figure of dynamics
+Summary_melt<-melt(Eco_summary,id.vars=c("Scenario","Time","Replicate","X"))
+Summary_melt$ESLab <- ES_labeller('variable',Summary_melt$variable)
+Summary_melt$Scen_lab <- Scenario_labeller('Scenario',Summary_melt$Scenario)
+Summary_melt$ESLab <- factor(Summary_melt$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
+                                                   "Nitrogen mineralistation \nrate","Commercially valuable \nfungi richness",
+                                                   "Timber volume","Aesthetic value", "Recreation value",
+                                                   "Fungi species richness","Ground flora \nspecies richness",
+                                                   "Lichen species \nrichness","Tree species richness"))
+Melt_summary<-ddply(Summary_melt,.(Time,ESLab,Scen_lab),summarise,med_val=median(value))
+
+#now plot dynamics
+theme_set(theme_bw(base_size=12))
+P1<-ggplot(Melt_summary,aes(x=Time,y=med_val,colour=Scen_lab,group=Scen_lab))+geom_line()+facet_wrap(~ESLab,scales = "free")
+P2<-P1+xlab("Time (years)")+ylab("variable value")+scale_colour_manual("Management",values = c("black","red"))
+P2+theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Dynamics.pdf",width = 10,height = 6,dpi = 400,units = "in")
+ggsave("Figures/Dynamics.png",width = 10,height = 6,dpi = 800,units = "in")
+
 
 
 #############################################################
@@ -91,7 +108,7 @@ Res_summary$ESLab <- ES_labeller('variable',Res_summary$variable)
 Res_summary$Scen_lab <- Scenario_labeller('Scenario',Res_summary$Scenario)
 
 #recalculate statistics for figure
-Res_summary2<-ddply(Res_summary,.(Scenario,ESLab),transform,m_Res=mean(Resistance),max_R=max(Resistance),min_R=min(Resistance))
+Res_summary2<-ddply(Res_summary,.(Scenario,variable,Scen_lab,ESLab),summarise,m_Res=mean(Resistance),max_R=max(Resistance),min_R=min(Resistance))
 Res_summary2<-subset(Res_summary2,ESLab!="Replicate")
 #reorder factors for plotting
 Res_summary2$ESLab <- factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon stock", "Nitrogen stock","Soil respiration rate",
@@ -99,24 +116,16 @@ Res_summary2$ESLab <- factor(Res_summary2$ESLab, c("Aboveground biomass","Carbon
                                                    "Timber volume","Aesthetic value", "Recreation value",
                                                          "Fungi species richness","Ground flora \nspecies richness",
                                                           "Lichen species \nrichness","Tree species richness"))
-#plot results
-#first with no facets
+#plot results with facets
 theme_set(theme_bw(base_size=12))
-P1<-ggplot(Res_summary2,aes(x=ESLab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5,position=position_dodge(width = 0.5))
-P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
-P3<-P2+xlab("Ecosystem service/biodiversity metric")+ylab("Resistance")
-P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P5<-P4+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
-ggsave("Figures/Resistance_no_facet.pdf",width = 10,height = 6,units = "in",dpi = 400)
-
-#now with facets
-theme_set(theme_bw(base_size=12))
-P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5,position=position_dodge(width = 0.5))+facet_wrap(~ESLab,scales = "free_x")
+P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=max_R,ymin=min_R,shape=Scen_lab,colour=Scen_lab,group=Scen_lab))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,scales = "free_x")
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+xlab("Management type")+ylab("Resistance")
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P4+scale_y_continuous(limits=c(0.9,1.05))
-ggsave("Figures/Resistance_facet.pdf",width = 10,height = 8,units = "in",dpi = 400)
+P4+scale_y_continuous(limits=c(0.9,1.05))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Resistance.pdf",width = 10,height = 8,units = "in",dpi = 400)
+ggsave("Figures/Resistance.png",width = 10,height = 8,units = "in",dpi = 800)
+
 
 #############################################################
 #2 - Recovery################################################
@@ -162,9 +171,6 @@ Recovery_summary$Resistance<-ifelse(Recovery_summary$Resistance>=1,1,Recovery_su
 #subset data so that data before time step==5, data from Scenario 1 and where resistance>1 are removed
 Recovery_sub<-subset(Recovery_summary,Time>5)
 
-#not sure what is going on with carbon here - this will need fixing
-ggplot(Recovery_sub,aes(x=Time,y=Resistance2,colour=Scenario,group=interaction(Replicate,Scenario)))+geom_line()+facet_wrap(~Variable,scales="free_y")
-
 #now work out the first time point at which Resistance2>=1, thereby working out the time
 #taken for each ecosystem service/biodiversity variable to recover
 
@@ -190,30 +196,19 @@ R_summ$variable<-R_summ$Variable#tidy data
 R_summ$ESLab <- ES_labeller('variable',R_summ$variable)#relabel variables for ease of plotting
 R_summ$Scen_lab <- Scenario_labeller('Scenario',R_summ$Scenario)
 
-R_summ<-subset(R_summ,ESLab=="Carbon stock"|ESLab=="Nitrogen stock"|ESLab=="Recreation value"|ESLab=="Timber volume"|ESLab=="Fungi species richness"|ESLab=="Ground flora \nspecies richness"|ESLab=="Lichen species \nrichness"|ESLab=="Tree species richness")
 R_summ$ESLab <- factor(R_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recreation value", "Timber volume",
                                                    "Fungi species richness","Ground flora \nspecies richness",
                                                    "Lichen species \nrichness","Tree species richness"))
 
 
-R_summ2<-ddply(R_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_time=mean(Time,na.rm = T),sd_time=sd(Time,na.rm = T))
-R_summ2$m_time<-ifelse(R_summ2$Variable=="GF_M"|R_summ2$Variable=="Tree_richness_M",NA,R_summ2$m_time)
-
-
-#plot recovery
-P1<-ggplot(Res_summary2,aes(x=Scen_lab,y=m_Res,ymax=m_Res+sd_Res,ymin=m_Res-sd_Res,shape=Scen_lab2,colour=Scen_lab2))+facet_wrap(~ESLab,ncol=4)+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)+geom_pointrange(alpha=0.5)
-P2<-P1+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_rect(size=1.5,colour="black",fill=NA))+geom_line(data=Res_summary2,aes(group=Scen_lab2))
-P3<-P2+xlab("Degree of disturbance")+ylab("Resistance")
-P3+scale_colour_manual("Disturbance type",values = c("black","red"))+scale_shape_manual("Disturbance type",values = c(15, 17))
-
 #plot of time taken for recovery
-P1<-ggplot(R_summ2,aes(x=Scen_lab,y=m_time,ymax=m_time+sd_time,ymin=m_time-sd_time,colour=Scen_lab,shape=Scen_lab))+geom_pointrange(alpha=0.5)+facet_wrap(~ESLab,ncol=4)
+P1<-ggplot(R_summ2,aes(x=Scen_lab,y=m_time,ymax=m_time+sd_time,ymin=m_time-sd_time,colour=Scen_lab,shape=Scen_lab))+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,ncol=4,scale="free")
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+ylab("Time taken for recovery (Years)")+ theme(strip.text.x = element_text(size = 8))+xlab("Mangement type")
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P4+scale_y_continuous(limits=c(0,70))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
-ggsave("Figures/Recovery_time_facet.pdf",width = 10,height = 5,units = "in",dpi = 400)
-
+P4+scale_y_continuous(limits=c(0,105))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Recovery_time.pdf",width = 10,height = 8,units = "in",dpi = 400)
+ggsave("Figures/Recovery_time.png",width = 10,height = 8,units = "in",dpi = 800)
 
 ##################################################################
 #3 - PERSISTENCE##################################################
@@ -244,17 +239,13 @@ Pers_summ$Scen_lab <- Scenario_labeller('Scenario',Pers_summ$Scenario)
 Pers_summ$Scen_lab2 <- Scenario_labeller2('Scenario',Pers_summ$Scenario)
 
 
-
-Pers_summ<-subset(Pers_summ,ESLab=="Carbon stock"|ESLab=="Nitrogen stock"|ESLab=="Recreation value"|ESLab=="Timber volume"|ESLab=="Fungi species richness"|ESLab=="Ground flora \nspecies richness"|ESLab=="Lichen species \nrichness"|ESLab=="Tree species richness")
-Pers_summ$ESLab <- factor(Pers_summ$ESLab, c("Carbon stock", "Nitrogen stock", "Recreation value", "Timber volume",
-                                       "Fungi species richness","Ground flora \nspecies richness",
-                                       "Lichen species \nrichness","Tree species richness"))
 Pers_summ2<-ddply(Pers_summ,.(Scenario,Variable,Scen_lab,ESLab),summarise,m_var=mean(Resistance2),sd_var=sd(Resistance2))
 
 #produce figure
-P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var,colour=Scen_lab,shape=Scen_lab))+geom_pointrange(alpha=0.5)+facet_wrap(~ESLab,ncol=4)
+P1<-ggplot(Pers_summ2,aes(x=Scen_lab,y=m_var,ymax=m_var+sd_var,ymin=m_var-sd_var,colour=Scen_lab,shape=Scen_lab))+geom_point(alpha=0.5,size=4)+facet_wrap(~ESLab,ncol=4,scale="free")
 P2<-P1+theme(panel.border = element_rect(size=1.5,colour="black",fill=NA))
 P3<-P2+ylab("Persistance")+ theme(strip.text.x = element_text(size = 8))+geom_hline(yintercept=1,lty=2,alpha=0.5,size=0.5)
 P4<-P3+scale_colour_manual("Management",values = c("black","red"))+scale_shape_manual("Management",values = c(15, 17))
-P4+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))+xlab("Management type")
-ggsave("Figures/Persistence_facets.pdf",width = 10,height = 5,units = "in",dpi = 400)
+P4+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))+xlab("Management type")+scale_y_continuous(limits=c(0.7,1.05))+ theme(legend.key.height=unit(3,"line"),legend.key.width=unit(3,"line"))
+ggsave("Figures/Persistence.pdf",width = 10,height = 8,units = "in",dpi = 400)
+ggsave("Figures/Persistence.png",width = 10,height = 8,units = "in",dpi = 800)
