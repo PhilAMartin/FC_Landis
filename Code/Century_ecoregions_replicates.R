@@ -2,9 +2,10 @@
 #Elena's Landis-II 'ecoregions' using data from Paul's gradient plots
 
 #author: Phil martin
-#Date 2016/03/16
+#Date 2015/11/04
 
 #open packages
+library(raster)
 library(ggplot2)
 library(lme4)
 library(reshape)
@@ -94,23 +95,23 @@ for (i in 1:length(Eco_regions)){#for each file in the list Eco_regions run this
   N_col<-ncol(EcoR)
   EcoR2<-data.frame(EcoR[-c(5:6,(8:N_col))],SRR=NA,Min_rate=NA,Fungi=NA,GF=NA,Lichen=NA,Fungi_val=NA,Aesthetic=NA,Recreation=NA)
   Mean_summary<-NULL
-for (j in 1:nrow(Coefficients)){
-  if (j<3){
-    Prediction<-((((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))*Coefficients[j,3]+ #use coefficients to predict ES and biodiversity values
-                    (((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))^2)*Coefficients[j,4])+Coefficients[j,2])
-    EcoR2[[5+j]]<-Prediction
-  } else if (j>3 & j<=6){
-    Prediction<-((((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))*Coefficients[j,3]+ #use coefficients to predict ES and biodiversity values
-                    (((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))^2)*Coefficients[j,4])+Coefficients[j,2])
-    EcoR2[[5+j]]<-exp(Prediction)
-  }else{
-  Prediction<-(((((EcoR2$AGB/100)*Coefficients[j,3])+ #use coefficients to predict ES and biodiversity values
-                  (((EcoR2$AGB/100)^2)*Coefficients[j,4])+Coefficients[j,2])))
-  EcoR2[[5+j]]<-((plogis(Prediction))*4)+1  
-}}
-EcoR2$Scenario<-paste("Scenario ",gsub( "_r.*$", "", gsub("^.*?Century-succession-log","", Eco_regions[i])),sep="")
-EcoR2$Replicate<-as.numeric(gsub( ".csv.*$", "", gsub("^.*?_r","", Eco_regions[i])))
-Eco_summary<-rbind(Eco_summary,EcoR2)
+  for (j in 1:nrow(Coefficients)){
+    if (j<3){
+      Prediction<-((((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))*Coefficients[j,3]+ #use coefficients to predict ES and biodiversity values
+                      (((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))^2)*Coefficients[j,4])+Coefficients[j,2])
+      EcoR2[[5+j]]<-Prediction
+    } else if (j>=3 & j<=6){
+      Prediction<-((((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))*Coefficients[j,3]+ #use coefficients to predict ES and biodiversity values
+                      (((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))^2)*Coefficients[j,4])+Coefficients[j,2])
+      EcoR2[[5+j]]<-exp(Prediction)
+    }else{
+      Prediction<-(((((EcoR2$AGB/100)*Coefficients[j,3])+ #use coefficients to predict ES and biodiversity values
+                       (((EcoR2$AGB/100)^2)*Coefficients[j,4])+Coefficients[j,2])))
+      EcoR2[[5+j]]<-((plogis(Prediction))*4)+1  
+    }}
+  EcoR2$Scenario<-paste("Scenario ",gsub( "_r.*$", "", gsub("^.*?Century-succession-log","", Eco_regions[i])),sep="")
+  EcoR2$Replicate<-as.numeric(gsub( ".csv.*$", "", gsub("^.*?_r","", Eco_regions[i])))
+  Eco_summary<-rbind(Eco_summary,EcoR2)
 }
 
 
@@ -118,6 +119,7 @@ Eco_summary<-rbind(Eco_summary,EcoR2)
 Eco_summary$AGB<-Eco_summary$AGB/100
 
 Eco_summary2<-ddply(Eco_summary,.(Time,EcoregionName,EcoregionIndex,Scenario,Replicate),numcolwise(mean,na.rm=T))
+
 
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
@@ -132,7 +134,9 @@ Eco_summary3<-ddply(Eco_summary,.(Scenario,Time,Replicate),summarise,
                     Aesthetic_M=weighted.mean(Aesthetic,NumSites,na.rm = T),
                     Recreation_M=weighted.mean(Recreation,NumSites,na.rm = T),
                     Fungi_val_M=weighted.mean(Fungi_val,NumSites,na.rm = T)
-                    )
+)
+
+
 
 #################################################
 #run calculations for carbon and nitrogen stocks###
@@ -150,14 +154,10 @@ for (i in 1:length(C_N)){
   File<-read.csv(C_N[i])
   #remove blank column
   File_sub<-File[-c(5:12,14,29:ncol(File))]
-  head(File_sub)
-  File_sub_melt<-melt(File_sub,id.vars=c("Time","EcoregionName","EcoregionIndex","NumSites"))
-  Summarise_melt<-ddply(File_sub_melt,.(Time,variable),summarise,med_val=median(value))
   #remove rows containing NAs
   File_sub2<-File_sub[complete.cases(File_sub),]
-  head(File_sub2)
   #calculate total carbon
-  Total_C<-rowSums (File_sub2[6:(ncol(File_sub2)-4)], na.rm = FALSE, dims = 1)/100
+  Total_C<-rowSums (File_sub2[6:ncol(File_sub2)], na.rm = FALSE, dims = 1)/100
   File_sub3<-cbind(File_sub2[,1:5],Total_C)
   #insert a column with the scenario number
   File_sub3$Scenario<-paste("Scenario ",gsub(".*-log|_r.*","", C_N[i]),sep="")
@@ -185,9 +185,10 @@ BM_ER<-NULL
 for (i in 1:length(Eco_region_BM)){
   #read in .csv
   File<-read.csv(Eco_region_BM[i])
+  head(File[c(1:4)])
+  File_sub1<-File[-c(1:4,ncol(File))]
   #remove columns that we are not interested in
-  File_sub1<-File[,-c(1:4,ncol(File))]
-  File_sub2<-File[,c("Time","Ecoregion","EcoregionIndex","NumSites","SppBiomass_fagusylv","SppBiomass_querrobu")]
+  File_sub2<-File[c(1:4,16,30)]
   #remove rows containing NAs
   File_sub1<-File_sub1[complete.cases(File_sub1),]
   File_sub1[File_sub1 > 0] <- 1 
@@ -202,8 +203,13 @@ for (i in 1:length(Eco_region_BM)){
   BM_ER<-rbind(File_sub3,BM_ER)
 }
 
+
+head(BM_ER)
+
 #convert biomass to volume using expansion factor of 0.55 for beech and 0.56 for oak
 BM_ER$Vol<-((BM_ER$SppBiomass_fagusylv/0.55)+(BM_ER$SppBiomass_querrobu/0.56))/100
+
+head(BM_ER)
 
 Trees_sum<-ddply(BM_ER,.(Time,EcoregionName,Scenario,Replicate),summarise,Timber=mean(Vol,na.rm = T),Tree_richness=mean(Sp_R,na.rm = T))
 Trees<-ddply(BM_ER,.(Scenario,Time,Replicate),summarise,Timber_M=weighted.mean(Vol,NumSites,na.rm = T),
@@ -212,7 +218,11 @@ Trees<-ddply(BM_ER,.(Scenario,Time,Replicate),summarise,Timber_M=weighted.mean(V
 #merge all different ecosystem services and biodiversity measures together into two dataframes#####################
 ###################################################################################################################
 
+Eco_summary_means<-merge(merge(Eco_summary2,CN_ER_sum,by=c("EcoregionName","Scenario","Time")),Trees_sum,by=c("EcoregionName","Scenario","Time"))
+write.csv(x=Eco_summary_means,"Data/R_output/Ecoregion_means_replicates.csv")
+
 #calculate mean of the results for each time step, weighting by number of pixels in each 
 #ecoregion
+
 Eco_summary_weighted<-merge(merge(Eco_summary3,WM_CN,by=c("Scenario","Time","Replicate")),Trees,by=c("Scenario","Time","Replicate"))
 write.csv(x=Eco_summary_weighted,"Data/R_output/Ecoregion_summary_replicates.csv")
