@@ -95,7 +95,7 @@ for (i in 1:length(Eco_regions)){#for each file in the list Eco_regions run this
   EcoR2<-data.frame(EcoR[-c(5:6,(8:N_col))],SRR=NA,Min_rate=NA,Fungi=NA,GF=NA,Lichen=NA,Fungi_val=NA,Aesthetic=NA,Recreation=NA)
   Mean_summary<-NULL
 for (j in 1:nrow(Coefficients)){
-  if (j<=3){
+  if (j<3){
     Prediction<-((((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))*Coefficients[j,3]+ #use coefficients to predict ES and biodiversity values
                     (((((EcoR2$AGB)/100)-mean(BM$AGB))/sd(BM$AGB))^2)*Coefficients[j,4])+Coefficients[j,2])
     EcoR2[[5+j]]<-Prediction
