@@ -2,7 +2,7 @@
 #Elena's Landis-II 'ecoregions' using data from Paul's gradient plots
 
 #author: Phil martin
-#Date 2015/11/04
+#date last edited 2016/08/03
 
 #open packages
 library(raster)
