@@ -146,19 +146,24 @@ Eco_summary3<-ddply(Eco_summary,.(Scenario,Time,Replicate),summarise,
 C_N<-list.files(pattern="Century-succession-log",recursive=T)
 
 #run a loop to read in each .csv containing tree species biomass values
-#remove columns that are not useful and ass a column to give details of
+#remove columns that are not useful and add a column to give details of
 #the scenario being run
 CN_ER<-NULL
 for (i in 1:length(C_N)){
   #read in .csv
+  i<-1
   File<-read.csv(C_N[i])
   #remove blank column
   File_sub<-File[-c(5:12,14,29:ncol(File))]
+  File_sub_melt<-melt(File_sub,id.vars=c("Time","EcoregionName","EcoregionIndex","NumSites"))
+  Summarise_melt<-ddply(File_sub_melt,.(Time,variable),summarise,med_val=median(value))
   #remove rows containing NAs
   File_sub2<-File_sub[complete.cases(File_sub),]
   #calculate total carbon
-  Total_C<-rowSums (File_sub2[6:ncol(File_sub2)], na.rm = FALSE, dims = 1)/100
+  View(File_sub2)
+  Total_C<-rowSums (File_sub2[6:(ncol(File_sub2)-4)], na.rm = FALSE, dims = 1)/100
   File_sub3<-cbind(File_sub2[,1:5],Total_C)
+  ggplot(File_sub3,aes(x=Time,y=Total_C,group=EcoregionName))+geom_line()
   #insert a column with the scenario number
   File_sub3$Scenario<-paste("Scenario ",gsub(".*-log|_r.*","", C_N[i]),sep="")
   File_sub3$Replicate<-sub(".*?_r(.*?).csv.*", "\\1", C_N[i])
