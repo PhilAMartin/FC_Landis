@@ -151,7 +151,6 @@ C_N<-list.files(pattern="Century-succession-log",recursive=T)
 CN_ER<-NULL
 for (i in 1:length(C_N)){
   #read in .csv
-  i<-1
   File<-read.csv(C_N[i])
   #remove blank column
   File_sub<-File[-c(5:12,14,29:ncol(File))]
@@ -160,7 +159,6 @@ for (i in 1:length(C_N)){
   #remove rows containing NAs
   File_sub2<-File_sub[complete.cases(File_sub),]
   #calculate total carbon
-  View(File_sub2)
   Total_C<-rowSums (File_sub2[6:(ncol(File_sub2)-4)], na.rm = FALSE, dims = 1)/100
   File_sub3<-cbind(File_sub2[,1:5],Total_C)
   ggplot(File_sub3,aes(x=Time,y=Total_C,group=EcoregionName))+geom_line()
